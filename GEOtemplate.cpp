@@ -231,6 +231,24 @@ struct Convex: Polygon {
         return {res};
     }
 
+    // on the line: -1
+    // inside: 1
+    // outside: 0
+    // O(logn)
+    int have(const Point& a) {
+        if(p.size() == 1) return a == p[0] ? -1 : 0;
+        if(p.size() == 2) return Segment(p[0], p[1]).have(a) ? -1 : 0;
+        if(a == p[0]) return -1;
+        if(Segment(p[0], p[1]).toLeft(a) == -1 || Segment(p[0], p.back()).toLeft(a) == 1) return 0;
+
+        auto cmp = [&](const Point& u, const Point& v) {return Segment(p[0], u).toLeft(v) == 1;};
+        size_t i = lower_bound(p.begin() + 1, p.end(), a, cmp) - p.begin();
+        if(i == 1) return Segment(p[0], p[i]).have(a) ? -1 : 0;
+        if(i == p.size() - 1 && Segment(p[0], p[i]).have(a)) return -1;
+        if(Segment(p[i-1], p[i]).have(a)) return -1;
+        return Segment(p[i-1], p[i]).toLeft(a) > 0;
+    }
+
     // O(n)
     template<typename F>
     void rotcaliper(F& func) {
