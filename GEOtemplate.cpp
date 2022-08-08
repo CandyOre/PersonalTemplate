@@ -40,6 +40,9 @@ struct Point {
     bool operator < (const Point& v) const {
         return sgn(x - v.x) ? sgn(x - v.x) == -1 : sgn(y - v.y) == -1;
     }
+    bool operator == (const Point& v) const {
+        return !sgn(x - v.x) && !sgn(y - v.y);
+    }
 
     T len2 () {
         return x * x + y * y;
@@ -124,8 +127,9 @@ struct Polygon {
     inline size_t pre(const size_t i) const {return i==0?p.size()-1:i-1;}
 
     // on the line: INT_MIN
-    // inside: 1 (winding number)
+    // inside: >= 1 (winding number)
     // outside: 0
+    // O(n)
     int have(const Point& a) {
         int cnt = 0;
         for(int i = 0; i < p.size(); i++) {
@@ -179,6 +183,7 @@ struct argcmp {
 } cmp;
 
 struct Convex: Polygon {
+    // O(nlogn)
     Convex(vector<Point>& p): Polygon(p.size()) {
         vector<Point> st;
         sort(p.begin(), p.end());
@@ -200,6 +205,7 @@ struct Convex: Polygon {
         this->p = st;
     }
 
+    // O(nlogn)
     Convex operator + (const Convex& c) const {
         vector<Segment> e1(p.size()), e2(c.p.size()), e(p.size() + c.p.size());
         for(int i = 0; i < p.size(); i++) e1[i] = {p[i], p[nxt(i)]};
@@ -225,6 +231,7 @@ struct Convex: Polygon {
         return {res};
     }
 
+    // O(n)
     template<typename F>
     void rotcaliper(F& func) {
         for(int i = 0, j = 1; i < p.size(); i++) {
@@ -238,6 +245,7 @@ struct Convex: Polygon {
         }
     }
 
+    // O(n)
     T diameter2() {
         if (p.size() == 1) return 0;
         if (p.size() == 2) return p[0].dis2(p[1]);
@@ -249,6 +257,7 @@ struct Convex: Polygon {
         return ans;
     }
 
+    // O(nlogn)
     T minDisTo(Convex& c) {
         Convex m = *this + c;
         ld ans = LLONG_MAX;
