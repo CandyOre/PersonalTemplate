@@ -1,4 +1,4 @@
-using T = ll;
+using T = ld;
 
 inline int sgn(T x) {return abs(x) <= eps ? 0 : (x > 0 ? 1 : -1);}
 
@@ -77,6 +77,7 @@ struct Segment {
 };
 
 struct Polygon {
+    // counter clockwise
     vector<Point> p;
 
     Polygon(int n) { p.resize(n); }
@@ -85,7 +86,8 @@ struct Polygon {
     inline size_t pre(const size_t i) const {return i==0?p.size()-1:i-1;}
 
     // on the line: INT_MIN
-    // inside: 
+    // inside: 1 (winding number)
+    // outside: 0
     int have(const Point& a) {
         int cnt = 0;
         for(int i = 0; i < p.size(); i++) {
@@ -120,12 +122,3 @@ struct argcmp {
         return oa < ob;
     }
 } cmp;
-
-[](pair<Point, int> aa, pair<Point, int> bb) {
-    const auto& a = aa.first, b = bb.first;
-    if(a.order == b.order) {
-        const T t = a ^ b;
-        return sgn(t) > 0;
-    }
-    return a.order < b.order;
-}
