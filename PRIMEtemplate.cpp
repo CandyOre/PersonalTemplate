@@ -1,3 +1,10 @@
+#include <iostream>
+using namespace std;
+
+using ll = long long;
+
+const ll mod = 998244353;
+
 struct MT {
     ll x;
     MT() : x(0) {}

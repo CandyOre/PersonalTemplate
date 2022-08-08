@@ -1,3 +1,12 @@
+#include <cmath>
+#include <climits>
+#include <algorithm>
+#include <vector>
+using namespace std;
+
+using ld = long double;
+const double eps = 1e-10;
+
 using T = ld;
 
 inline int sgn(T x) {return abs(x) <= eps ? 0 : (x > 0 ? 1 : -1);}
