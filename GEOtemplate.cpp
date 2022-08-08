@@ -181,4 +181,28 @@ struct Convex: Polygon {
         st.pop_back();
         this->p = st;
     }
+
+    template<typename F>
+    void rotcaliper(F& func) {
+        for(int i = 0, j = 1; i < p.size(); i++) {
+            auto ii = this->nxt(i);
+            func(p[i], p[ii], p[j]);
+            Segment seg(p[i], p[ii]);
+            while(seg.area2To(p[j]) <= seg.area2To(p[nxt(j)])) {
+                j = nxt(j);
+                func(p[i], p[ii], p[j]);
+            }
+        }
+    }
+
+    T diameter2() {
+        if (p.size() == 1) return 0;
+        if (p.size() == 2) return p[0].dis2(p[1]);
+        T ans = 0;
+        auto func = [&](Point& u, Point& v, Point& w) {
+            ans = max({ans, w.dis2(u), w.dis2(v)});
+        };
+        rotcaliper(func);
+        return ans;
+    }
 };
