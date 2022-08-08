@@ -37,24 +37,30 @@ struct Point {
     T operator ^ (const Point& v) const {
         return x * v.y - y * v.x;
     }
+    bool operator < (const Point& v) const {
+        return sgn(x - v.x) ? sgn(x - v.x) == -1 : sgn(y - v.y) == -1;
+    }
 
     T len2 () {
         return x * x + y * y;
     }
-    double len () {
+    ld len () {
         return sqrt(x * x + y * y);
     }
     Point unit () {
         return *this * (1.0 / this->len());
     }
-    T dis (const Point& v) {
+    T dis2 (const Point& v) {
+        return (v - *this).len2();
+    }
+    ld dis (const Point& v) {
         return (v - *this).len();
     }
 
     T proj2(const Point& v) {
         return *this * v;
     }
-    double angle(Point& v) {
+    ld angle(Point& v) {
         return acosl(clamp((long double)(*this * v) / (this->len() * v.len()), -1.0L, 1.0L));
     }
 };
@@ -68,6 +74,7 @@ struct Segment {
         return sgn(p - u ^ p - v) == 0 && sgn((p - u) * (p - v)) <= 0;
     }
 
+    // p in the left side of segment
     int toLeft(const Point& p) {
         return sgn(v - u ^ p - u);
     }
@@ -82,6 +89,10 @@ struct Segment {
     // double / Not parallel
     Point inter(const Segment& s) {
         return u + (v - u) * ((s.v - s.u ^ u - s.u) / (v - u ^ s.v - s.u));
+    }
+
+    T area2To(Point& p) {
+        return p - u ^ p - v;
     }
 };
 
@@ -110,6 +121,23 @@ struct Polygon {
         }
         return cnt;
     }
+
+    T area2() {
+        T sum = 0;
+        for(int i = 0; i < p.size(); i++) {
+            sum += p[i] ^ p[nxt(i)];
+        }
+        return sum;
+    }
+
+    // circumference
+    ld circ() {
+        ld sum = 0;
+        for(int i = 0; i < p.size(); i++) {
+            sum += p[i].dis(p[nxt(i)]);
+        }
+        return sum;
+    }
 };
 
 struct argcmp {
@@ -131,3 +159,26 @@ struct argcmp {
         return oa < ob;
     }
 } cmp;
+
+struct Convex: Polygon {
+    Convex(vector<Point>& p): Polygon(p.size()) {
+        vector<Point> st;
+        sort(p.begin(), p.end());
+
+        auto check = [&](Point& u) {
+            Point back1 = st.back(), back2 = *prev(st.end(), 2);
+            return Segment(back2, back1).toLeft(u) <= 0;
+        };
+        for(Point& u: p) {
+            while(st.size() > 1 && check(u)) st.pop_back();
+            st.push_back(u);
+        }
+        size_t cur = st.size();
+        for(int i = p.size() - 2; i > -1; i--) {
+            while(st.size() > cur && check(p[i])) st.pop_back();
+            st.push_back(p[i]);
+        }
+        st.pop_back();
+        this->p = st;
+    }
+};

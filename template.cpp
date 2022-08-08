@@ -73,7 +73,7 @@ signed main(){
     std::ios::sync_with_stdio(false);
     std::cin.tie(0);std::cout.tie(0);
     
-    cout << setprecision(8);
+    cout << fixed << setprecision(8);
 
     if(!OJ){
         freopen("try.in", "r", stdin);
