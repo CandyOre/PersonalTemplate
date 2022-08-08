@@ -5,6 +5,7 @@
 using namespace std;
 
 using ld = long double;
+const ld pi = acosl(-1);
 const double eps = 1e-10;
 
 using T = ld;
@@ -115,6 +116,9 @@ struct Segment {
         }
         return dis;
     }
+    Point proj(Point& p) {
+        return u + (v - u) * ((v - u) * (p - u) / ((v - u) * (v - u)));
+    }
 };
 
 struct Polygon {
@@ -159,6 +163,102 @@ struct Polygon {
             sum += p[i].dis(p[nxt(i)]);
         }
         return sum;
+    }
+
+    vector<int> manacher()
+    {
+        vector<tuple<T, T, T>> t;
+        vector<int> d;
+        t.push_back({-1, -1, -1});
+        t.push_back({0, 0, 0});
+        for (int i = 0; i < p.size(); i++) {
+            Point a = p[pre(i)], b = p[i], c = p[nxt(i)];
+            T arg = (a - b).angle(c - b);
+            if (Segment(b, a).toLeft(c) >= 0) arg = pi + pi - arg;
+            T ab = a.dis(b), bc = b.dis(c);
+            t.push_back({arg, ab, bc});
+            t.push_back({0, 0, 0});
+        }
+        for (int i = 0; i < p.size(); i++) {
+            Point a = p[pre(i)], b = p[i], c = p[nxt(i)];
+            T arg = (a - b).angle(c - b);
+            if (Segment(b, a).toLeft(c) >= 0) arg = pi + pi - arg;
+            T ab = a.dis(b), bc = b.dis(c);
+            t.push_back({arg, ab, bc});
+            t.push_back({0, 0, 0});
+        }
+        d.push_back(0);
+        auto eq=[](const tuple<T, T, T> &a, const tuple<T, T, T> &b) {
+            const auto [x1, y1, z1]=a;
+            const auto [x2, y2, z2]=b;
+            return !sgn(x1 - x2) && !sgn(y1 - z2) && !sgn(z1 - y2);
+        };
+        for (int i = 1, l = 0, r = 0; i < t.size(); i++) {
+            int dis = i > r ? 1 : min(d[l + l - i], r - i);
+            while (eq(t[i + dis], t[i - dis])) dis++;
+            dis--;
+            d.push_back(dis);
+            if (i + dis > r) l = i,r = i + dis;
+        }
+        return d;
+    }
+ 
+    vector<pair<int, int>> symaxis()
+    {
+        const auto d = manacher();
+        vector<pair<int, int>> axis;
+        int n = p.size();
+        if (n & 1) {
+            for (int i = 0; i < n; i++) {
+                if (d[(i + 1) * 2] >= n || d[(i + n + 1) * 2] >= n) axis.push_back({i, -1});
+            }
+        }
+        else {
+            for (int i = 0; i < n / 2; i++) {
+                if (d[(i + 1) * 2] >= n - 1 || d[(i + n + 1) *2] >= n - 1) axis.push_back({i, -1});
+                if (d[(i + 1) * 2 + 1] >= n || d[(i + n + 1) *2 + 1] >= n) axis.push_back({i, 1});
+            }
+        }
+        return axis;
+    }
+
+    Segment get_axis(pair<int, int> &id) {
+        auto [i, j] = id;
+        if (j == -1) {
+            Point a = p[pre(i)], b = p[i], c = p[nxt(i)];
+            return {b, (a + c) * 0.5};
+        }
+        else {
+            Point a = p[i], b = p[nxt(i)], c = p[pre(i)], d = p[nxt(nxt(i))];
+            return {(a + b) * 0.5, (c + d) * 0.5};
+        }
+    }
+
+    T rotateVol() {
+        auto axis = symaxis();
+        if (axis.empty()) return 0;
+        else if (axis.size() == 1) {
+            Segment ax = get_axis(axis[0]);
+            T sum = 0;
+            for(int i = 0; i < p.size(); i++) {
+                Point a = p[i], b = p[nxt(i)];
+                if (ax.toLeft(a) >= 0 && ax.toLeft(b) >= 0) {
+                    T h = ax.proj(a).dis(ax.proj(b));
+                    T r1 = ax.disTo(a), r2 = ax.disTo(b);
+                    sum += pi * h * (r1 * r1 + r2 * r2 + r1 * r2) / 3;
+                }
+            }
+            return sum;
+        }
+        else {
+            Segment ax1 = get_axis(axis[0]), ax2 = get_axis(axis[1]);
+            Point o = ax1.inter(ax2);
+            T r = 0;
+            for(int i = 0; i < p.size(); i++) {
+                r = max(r, p[i].dis(o));
+            }
+            return 4 * pi * r * r * r / 3;
+        }
     }
 };
 
