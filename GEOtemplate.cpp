@@ -67,6 +67,7 @@ struct Point {
 
 struct Segment {
     Point u, v;
+    Segment(){};
     Segment(Point uu, Point vv) { u = uu, v = vv; } 
 
     // careful with double precisions
@@ -91,8 +92,25 @@ struct Segment {
         return u + (v - u) * ((s.v - s.u ^ u - s.u) / (v - u ^ s.v - s.u));
     }
 
+    // directed area * 2
     T area2To(Point& p) {
         return p - u ^ p - v;
+    }
+    ld len() {
+        return v.dis(u);
+    }
+    ld disTo(Point& p) {
+        return abs(area2To(p)) / len();
+    }
+    ld minDisTo(Point& p) {
+        ld dis = min(u.dis(p), v.dis(p));
+        Point dir = v - u;
+        dir = {dir.y, -dir.x};
+        Segment vertical(p, p + dir);
+        if(vertical.isInter(*this)) {
+            dis = min(dis, disTo(p));
+        }
+        return dis;
     }
 };
 
@@ -182,6 +200,31 @@ struct Convex: Polygon {
         this->p = st;
     }
 
+    Convex operator + (const Convex& c) const {
+        vector<Segment> e1(p.size()), e2(c.p.size()), e(p.size() + c.p.size());
+        for(int i = 0; i < p.size(); i++) e1[i] = {p[i], p[nxt(i)]};
+        for(int i = 0; i < c.p.size(); i++) e2[i] = {c.p[i], c.p[c.nxt(i)]};
+
+        auto scmp = [](Segment& a, Segment& b){return cmp(a.v - a.u, b.v - b.u);};
+        rotate(e1.begin(), min_element(e1.begin(), e1.end(), scmp), e1.end());
+        rotate(e2.begin(), min_element(e2.begin(), e2.end(), scmp), e2.end());
+        merge(e1.begin(), e1.end(), e2.begin(), e2.end(), e.begin(), scmp);
+
+        vector<Point> res;
+        res.reserve(p.size() + c.p.size());
+        auto check = [&](Point& u) {
+            Point back1 = res.back(), back2 = *prev(res.end(), 2);
+            return !Segment(back2, back1).toLeft(u) && sgn((back1 - back2) * (u - back1)) >= 0;
+        };
+        auto u = e1[0].u + e2[0].u;
+        for(const auto& s : e) {
+            res.push_back(u);
+            u = u + s.v - s.u;
+            while(res.size() > 1 && check(u)) res.pop_back();
+        }
+        return {res};
+    }
+
     template<typename F>
     void rotcaliper(F& func) {
         for(int i = 0, j = 1; i < p.size(); i++) {
@@ -203,6 +246,16 @@ struct Convex: Polygon {
             ans = max({ans, w.dis2(u), w.dis2(v)});
         };
         rotcaliper(func);
+        return ans;
+    }
+
+    T minDisTo(Convex& c) {
+        Convex m = *this + c;
+        ld ans = LLONG_MAX;
+        Point o(0, 0);
+        for(int i = 0; i < m.p.size(); i++) {
+            ans = min(ans, Segment(m.p[i], m.p[m.nxt(i)]).minDisTo(o));
+        }
         return ans;
     }
 };
