@@ -173,7 +173,8 @@ struct Polygon {
         t.push_back({0, 0, 0});
         for (int i = 0; i < p.size(); i++) {
             Point a = p[pre(i)], b = p[i], c = p[nxt(i)];
-            T arg = (a - b).angle(c - b);
+            Point xx = c - b;
+            T arg = (a - b).angle(xx);
             if (Segment(b, a).toLeft(c) >= 0) arg = pi + pi - arg;
             T ab = a.dis(b), bc = b.dis(c);
             t.push_back({arg, ab, bc});
@@ -181,7 +182,8 @@ struct Polygon {
         }
         for (int i = 0; i < p.size(); i++) {
             Point a = p[pre(i)], b = p[i], c = p[nxt(i)];
-            T arg = (a - b).angle(c - b);
+            Point xx = c - b;
+            T arg = (a - b).angle(xx);
             if (Segment(b, a).toLeft(c) >= 0) arg = pi + pi - arg;
             T ab = a.dis(b), bc = b.dis(c);
             t.push_back({arg, ab, bc});
@@ -384,5 +386,45 @@ struct Convex: Polygon {
             ans = min(ans, Segment(m.p[i], m.p[m.nxt(i)]).minDisTo(o));
         }
         return ans;
+    }
+
+    Polygon minAreaRectangleCover() {
+        T ans = LLONG_MAX;
+        Polygon ansp(0); int cnt = 0;
+        for(int i = 0, j = 1, l = -1, r = -1; i < p.size(); i++) {
+            int ii = nxt(i);
+            Segment seg(p[i], p[ii]);
+            while (seg.area2To(p[j]) < seg.area2To(p[nxt(j)])) {
+                j = nxt(j);
+                // cout << j << endl;
+                // cnt++; if(cnt > 100) break;
+            }
+            if (l == -1) l = i, r = j;
+            Point ver = p[ii] - p[i];
+            ver = Point(-ver.y, ver.x);
+            while(Segment(p[l], p[nxt(l)]).toLeft(p[l] + ver) >= 0) {
+                l = nxt(l);
+                // cout << l << " " << Segment(p[l], p[nxt(l)]).toLeft(p[l] + ver) << endl;
+                // cnt++; if(cnt > 100) break;
+            }
+            while(Segment(p[r], p[nxt(r)]).toLeft(p[r] + ver) <= 0) {
+                r = nxt(r);
+                // cout << r << endl;
+                // cnt++; if(cnt > 100) break;
+            }
+            Segment si(p[i], p[ii]), sj(p[j], p[j] + p[ii] - p[i]);
+            Segment sl(p[l], p[l] + ver), sr(p[r], p[r] + ver);
+            Polygon t(4);
+            t.p[0] = si.inter(sl);
+            t.p[1] = sl.inter(sj);
+            t.p[2] = sj.inter(sr);
+            t.p[3] = sr.inter(si);
+            T s = t.area2();
+            if (s < ans) {
+                ans = s;
+                ansp = t;
+            } 
+        }
+        return ansp;
     }
 };
